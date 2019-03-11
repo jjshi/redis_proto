@@ -1,25 +1,26 @@
 package proto
 
 import (
+	"bufio"
 	"reflect"
+	"strings"
 	"testing"
 )
 
-func TestParseProto(t *testing.T) {
-	type args struct {
-		protocol []byte
+func TestReader_Parse(t *testing.T) {
+	type fields struct {
+		rd *bufio.Reader
 	}
 	tests := []struct {
 		name    string
-		args    args
+		fields  fields
 		want    interface{}
 		wantErr bool
 	}{
-		//  Add test cases.
 		{
 			name: "test_status",
-			args: args{
-				protocol: []byte("+OK\r\n"),
+			fields: fields{
+				rd: bufio.NewReader(strings.NewReader("+OK\r\n")),
 			},
 			want:    "OK",
 			wantErr: false,
@@ -27,8 +28,8 @@ func TestParseProto(t *testing.T) {
 
 		{
 			name: "test_string",
-			args: args{
-				protocol: []byte("+message\r\n"),
+			fields: fields{
+				rd: bufio.NewReader(strings.NewReader("$message\r\n")),
 			},
 			want:    "message",
 			wantErr: false,
@@ -36,8 +37,8 @@ func TestParseProto(t *testing.T) {
 
 		{
 			name: "test_int",
-			args: args{
-				protocol: []byte(":1000\r\n"),
+			fields: fields{
+				rd: bufio.NewReader(strings.NewReader(":1000\r\n")),
 			},
 			want:    1000,
 			wantErr: false,
@@ -45,14 +46,16 @@ func TestParseProto(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseProto(tt.args.protocol)
+			r := &Reader{
+				rd: tt.fields.rd,
+			}
+			got, err := r.Parse()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseProto() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Reader.Parse() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ParseProto() = %v, want %v", got, tt.want)
+				t.Errorf("Reader.Parse() = %v, want %v", got, tt.want)
 			}
 		})
 	}
